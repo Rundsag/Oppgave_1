@@ -29,6 +29,7 @@ from wtforms import (
     SubmitField,
     TextAreaField,
 )
+from wtforms.validators import DataRequired, EqualTo, Length, Regexp
 
 # Defines all forms in the application, these will be instantiated by the template,
 # and the routes.py will read the values of the fields
@@ -40,9 +41,8 @@ from wtforms import (
 
 class LoginForm(FlaskForm):
     """Provides the login form for the application."""
-
-    username = StringField(label="Username", render_kw={"placeholder": "Username"})
-    password = PasswordField(label="Password", render_kw={"placeholder": "Password"})
+    username = StringField(label="Username", render_kw={"placeholder": "Username"}, validators=[DataRequired()])
+    password = PasswordField(label="Password", render_kw={"placeholder": "Password"}, validators=[DataRequired()])
     remember_me = BooleanField(
         label="Remember me"
     )  # TODO: It would be nice to have this feature implemented, probably by using cookies
@@ -51,12 +51,40 @@ class LoginForm(FlaskForm):
 
 class RegisterForm(FlaskForm):
     """Provides the registration form for the application."""
+    # Require first and last name
+    first_name = StringField(
+        label="First Name",
+        render_kw={"placeholder": "First Name"},
+        validators=[DataRequired(message="First name is required")],
+    )
+    last_name = StringField(
+        label="Last Name",
+        render_kw={"placeholder": "Last Name"},
+        validators=[DataRequired(message="Last name is required")],
+    )
+    username = StringField(
+        label="Username",
+        render_kw={"placeholder": "Username"},
+        validators=[DataRequired(message="Username is required")],
+    )
 
-    first_name = StringField(label="First Name", render_kw={"placeholder": "First Name"})
-    last_name = StringField(label="Last Name", render_kw={"placeholder": "Last Name"})
-    username = StringField(label="Username", render_kw={"placeholder": "Username"})
-    password = PasswordField(label="Password", render_kw={"placeholder": "Password"})
-    confirm_password = PasswordField(label="Confirm Password", render_kw={"placeholder": "Confirm Password"})
+    # Password rules: min 8 chars, at least one uppercase, one lowercase and one digit
+    password = PasswordField(
+        label="Password",
+        render_kw={"placeholder": "Password"},
+        validators=[
+            DataRequired(message="Password is required"),
+            Length(min=8, message="Password must be at least 8 characters long"),
+            Regexp(r"(?=.*[a-z])", message="Password must contain a lowercase letter"),
+            Regexp(r"(?=.*[A-Z])", message="Password must contain an uppercase letter"),
+            Regexp(r"(?=.*\d)", message="Password must contain a number"),
+        ],
+    )
+    confirm_password = PasswordField(
+        label="Confirm Password",
+        render_kw={"placeholder": "Confirm Password"},
+        validators=[DataRequired(message="Please confirm your password"), EqualTo("password", message="Passwords must match")],
+    )
     submit = SubmitField(label="Sign Up")
 
 

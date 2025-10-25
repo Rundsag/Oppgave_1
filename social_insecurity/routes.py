@@ -27,7 +27,8 @@ def index():
     login_form = index_form.login
     register_form = index_form.register
 
-    if login_form.is_submitted() and login_form.submit.data:
+    # Use validate_on_submit to ensure WTForms validators run server-side
+    if login_form.validate_on_submit() and login_form.submit.data:
         get_user = f"""
             SELECT *
             FROM Users
@@ -42,7 +43,8 @@ def index():
         elif user["password"] == login_form.password.data:
             return redirect(url_for("stream", username=login_form.username.data))
 
-    elif register_form.is_submitted() and register_form.submit.data:
+    elif register_form.validate_on_submit() and register_form.submit.data:
+        # All validators passed, safe to insert
         insert_user = f"""
             INSERT INTO Users (username, first_name, last_name, password)
             VALUES ('{register_form.username.data}', '{register_form.first_name.data}', '{register_form.last_name.data}', '{register_form.password.data}');
@@ -50,6 +52,11 @@ def index():
         sqlite.query(insert_user)
         flash("User successfully created!", category="success")
         return redirect(url_for("index"))
+    elif register_form.is_submitted() and register_form.submit.data:
+        # Form was submitted but validation failed — collect and flash errors
+        for field_name, field_errors in register_form.errors.items():
+            for error in field_errors:
+                flash(f"{getattr(register_form, field_name).label.text}: {error}", category="warning")
 
     return render_template("index.html.j2", title="Welcome", form=index_form)
 
@@ -183,11 +190,29 @@ def friends(username: str):
         WHERE f.u_id = {user["id"]} AND f.f_id != {user["id"]};
         """
     friends = sqlite.query(get_friends)
-    return render_template("friends.html.j2", title="Friends", username=username, friends=friends, form=friends_form)
+
+    # People who added me (followers)
+    get_followers = f"""
+        SELECT *
+        FROM Friends AS f JOIN Users as u ON f.u_id = u.id
+        WHERE f.f_id = {user["id"]};
+        """
+    followers = sqlite.query(get_followers)
+
+    # Mark mutual status for followers (did I add them back?) and keep only non-mutual followers
+    friend_ids = {f['id'] for f in (friends or [])}
+    non_mutual_followers = []
+    for fol in (followers or []):
+        fol = dict(fol)
+        mutual = fol.get('id') in friend_ids
+        if not mutual:
+            non_mutual_followers.append(fol)
+
+    return render_template("friends.html.j2", title="Friends", username=username, friends=friends, followers=non_mutual_followers, form=friends_form)
 
 
-@app.route("/profile/<string:username>", methods=["GET", "POST"])
-def profile(username: str):
+@app.route("/profile/<string:viewer>/<string:username>", methods=["GET", "POST"])
+def profile(viewer: str, username: str):
     """Provides the profile page for the application.
 
     If a form was submitted, it reads the form data and updates the user's profile in the database.
@@ -195,14 +220,35 @@ def profile(username: str):
     Otherwise, it reads the username from the URL and displays the user's profile.
     """
     profile_form = ProfileForm()
-    get_user = f"""
+    # viewer: who is requesting the page, username: whose profile is being viewed
+    get_owner = f"""
         SELECT *
         FROM Users
         WHERE username = '{username}';
         """
-    user = sqlite.query(get_user, one=True)
+    owner = sqlite.query(get_owner, one=True)
 
-    if profile_form.is_submitted():
+    get_viewer = f"""
+        SELECT *
+        FROM Users
+        WHERE username = '{viewer}';
+        """
+    viewer_user = sqlite.query(get_viewer, one=True)
+
+    # If someone else is viewing the profile and they have previously added the owner,
+    # require that the owner has added them back (mutual) before allowing access.
+    if viewer != username and viewer_user is not None and owner is not None:
+        # Check if viewer added owner
+        viewer_added_owner = sqlite.query(f"SELECT * FROM Friends WHERE u_id = {viewer_user['id']} AND f_id = {owner['id']};", one=True)
+        # Check if owner added viewer
+        owner_added_viewer = sqlite.query(f"SELECT * FROM Friends WHERE u_id = {owner['id']} AND f_id = {viewer_user['id']};", one=True)
+
+        if viewer_added_owner and not owner_added_viewer:
+            flash("You cannot view this profile until they add you back.", category="warning")
+            return redirect(url_for("stream", username=viewer))
+
+    # Only owner may update their profile
+    if viewer == username and profile_form.is_submitted():
         update_profile = f"""
             UPDATE Users
             SET education='{profile_form.education.data}', employment='{profile_form.employment.data}',
@@ -211,9 +257,9 @@ def profile(username: str):
             WHERE username='{username}';
             """
         sqlite.query(update_profile)
-        return redirect(url_for("profile", username=username))
+        return redirect(url_for("profile", viewer=viewer, username=username))
 
-    return render_template("profile.html.j2", title="Profile", username=username, user=user, form=profile_form)
+    return render_template("profile.html.j2", title="Profile", username=viewer, user=owner, form=profile_form)
 
 
 @app.route("/uploads/<string:filename>")

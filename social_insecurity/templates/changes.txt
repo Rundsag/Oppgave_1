@@ -1,0 +1,78 @@
+# Changes made to templates with exact line numbers and before/after snippets
+
+# base.html.j2 (lines 62-65)
+# from:
+# 62                {% if title == 'Profile' %}
+# 63                  <a class="nav-link active" href={{ url_for('profile', username=username) }}>Profile<span class="sr-only">(current)</span></a>
+# 64                {% else %}
+# 65                  <a class="nav-link" href={{ url_for('profile', username=username) }}>Profile</a>
+#
+# to:
+# 62                  {% if title == 'Profile' %}
+# 63                  <a class="nav-link active" href={{ url_for('profile', viewer=username, username=username) }}>Profile<span class="sr-only">(current)</span></a>
+# 64                {% else %}
+# 65                  <a class="nav-link" href={{ url_for('profile', viewer=username, username=username) }}>Profile</a>
+
+
+# stream.html.j2 (line 26)
+# from:
+# 26                 <a class="col-4" href={{ url_for('profile', username=post.username) }}><span class="fa fa-user me-1" aria-hidden="true"></span>{{ post.username }}</a>
+#
+# to:
+# 26                 <a class="col-4" href={{ url_for('profile', viewer=username, username=post.username) }}><span class="fa fa-user me-1" aria-hidden="true"></span>{{ post.username }}</a>
+
+
+# comments.html.j2
+# - change at line 14 (post author link)
+# from:
+# 14                   <a class="col-4" href={{ url_for('profile', username=post.username) }}><span class="fa fa-user me-1" aria-hidden="true"></span>{{ post.username }}</a>
+# to:
+# 14                   <a class="col-4" href={{ url_for('profile', viewer=username, username=post.username) }}><span class="fa fa-user me-1" aria-hidden="true"></span>{{ post.username }}</a>
+#
+# - change at line 37 (comment author link)
+# from:
+# 37                 <a class="col-4" href={{ url_for('profile', username=comment.username) }}><span class="fa fa-user me-1" aria-hidden="true"></span>{{ comment.username }}</a>
+# to:
+# 37                 <a class="col-4" href={{ url_for('profile', viewer=username, username=comment.username) }}><span class="fa fa-user me-1" aria-hidden="true"></span>{{ comment.username }}</a>
+
+
+# friends.html.j2
+# - change at line 28 (friend link)
+# from:
+# 28                     <a href={{ url_for('profile', username=friend.username) }}>{{ friend.username }}</a>
+# to:
+# 28                     <a href={{ url_for('profile', viewer=username, username=friend.username) }}>{{ friend.username }}</a>
+#
+# - added block starting at line 43: "People who added you" (new non-mutual followers list)
+# from: (no block present previously)
+# to: (inserted at line ~43)
+# 43                   <h4 class="card-title">People who added you</h4>
+# 44                   <ul class="list-group list-group-flush">
+# 45                     {% for follower in followers %}
+# 46                       <li class="list-group-item d-flex justify-content-between align-items-center">
+# 47                         <a href={{ url_for('profile', viewer=username, username=follower.username) }}>{{ follower.username }}</a>
+# 48                         <form action="" method="post" class="m-0">
+# 49                           <input type="hidden" name="username" value="{{ follower.username }}">
+# 50                           <button type="submit" class="btn btn-sm btn-outline-primary">Add back</button>
+# 51                         </form>
+# 52                       </li>
+# 53                     {% endfor %}
+# 54                   </ul>
+
+
+# profile.html.j2 (lines 9-11)
+# from:
+#  9             <h4 class="card-title mb-3">About {{ username }}</h4>
+# 10             <button type="button"
+# 11                     class="btn btn-link mb-3"
+# to:
+#  9             <h4 class="card-title mb-3">About {{ user.username if user else username }}</h4>
+# 10            {% if username == (user.username if user else username) %}
+# 11            <button type="button"
+# 12                    class="btn btn-link mb-3"
+# 13                    onclick="switchVisibility('#edit-details', '#view-details')">
+# 14              <span class="fa fa-edit me-1" aria-hidden="true"></span>Edit
+# 15            </button>
+# 16            {% endif %}
+
+# End of changes summary

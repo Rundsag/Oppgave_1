@@ -6,12 +6,14 @@
       <div class="col-sm-12 col-lg-6">
         <div class="card">
           <div class="card-body">
-            <h4 class="card-title mb-3">About {{ username }}</h4>
+            <h4 class="card-title mb-3">About {{ user.username if user else username }}</h4>
+            {% if username == (user.username if user else username) %}
             <button type="button"
                     class="btn btn-link mb-3"
                     onclick="switchVisibility('#edit-details', '#view-details')">
               <span class="fa fa-edit me-1" aria-hidden="true"></span>Edit
             </button>
+            {% endif %}
             <!--View profile details-->
             <div id="view-details" style="display: block;">
               <ul class="list-group list-group-flush">

@@ -1,0 +1,140 @@
+# Changelog for code edits (forms.py and routes.py)
+# Generated: lines refer to the current files in the workspace
+
+=== social_insecurity/forms.py ===
+
+1) Inserted import (line 32)
+from: (no import present)
+to:
+32: from wtforms.validators import DataRequired, EqualTo, Length, Regexp
+
+2) first_name field changed (original single-line -> validators added) (approx. old line -> new lines start at 55)
+from:
+    first_name = StringField(label="First Name", render_kw={"placeholder": "First Name"})
+to:
+55:     first_name = StringField(
+56:         label="First Name",
+57:         render_kw={"placeholder": "First Name"},
+58:         validators=[DataRequired(message="First name is required")],
+59:     )
+
+3) username field changed to require DataRequired (approx. new block)
+from:
+    username = StringField(label="Username", render_kw={"placeholder": "Username"})
+to:
+    username = StringField(
+        label="Username",
+        render_kw={"placeholder": "Username"},
+        validators=[DataRequired(message="Username is required")],
+    )
+
+4) password field strengthened with validators (old single-line -> new block at line ~72)
+from:
+    password = PasswordField(label="Password", render_kw={"placeholder": "Password"})
+to:
+72:     password = PasswordField(
+73:         label="Password",
+74:         render_kw={"placeholder": "Password"},
+75:         validators=[
+76:             DataRequired(message="Password is required"),
+77:             Length(min=8, message="Password must be at least 8 characters long"),
+78:             Regexp(r"(?=.*[a-z])", message="Password must contain a lowercase letter"),
+79:             Regexp(r"(?=.*[A-Z])", message="Password must contain an uppercase letter"),
+80:             Regexp(r"(?=.*\\d)", message="Password must contain a number"),
+81:         ],
+82:     )
+
+5) confirm_password now uses EqualTo validator (new block)
+from:
+    confirm_password = PasswordField(label="Confirm Password", render_kw={"placeholder": "Confirm Password"})
+to:
+83:     confirm_password = PasswordField(
+84:         label="Confirm Password",
+85:         render_kw={"placeholder": "Confirm Password"},
+86:         validators=[DataRequired(message="Please confirm your password"), EqualTo("password", message="Passwords must match")],
+87:     )
+
+=== social_insecurity/routes.py ===
+
+1) Login form check: changed is_submitted() -> validate_on_submit() (line ~31)
+from:
+    if login_form.is_submitted() and login_form.submit.data:
+to:
+30:     # Use validate_on_submit to ensure WTForms validators run server-side
+31:     if login_form.validate_on_submit() and login_form.submit.data:
+
+2) Register form: changed is_submitted() -> validate_on_submit() and added error flashing (register block, lines ~46-61)
+from:
+    elif register_form.is_submitted() and register_form.submit.data:
+        insert_user = f"""
+            INSERT INTO Users (username, first_name, last_name, password)
+            VALUES ('{register_form.username.data}', '{register_form.first_name.data}', '{register_form.last_name.data}', '{register_form.password.data}');
+            """
+        sqlite.query(insert_user)
+        flash("User successfully created!", category="success")
+        return redirect(url_for("index"))
+to:
+46:     elif register_form.validate_on_submit() and register_form.submit.data:
+47:         # All validators passed, safe to insert
+48:         insert_user = f"""
+49:             INSERT INTO Users (username, first_name, last_name, password)
+50:             VALUES ('{register_form.username.data}', '{register_form.first_name.data}', '{register_form.last_name.data}', '{register_form.password.data}');
+51:             """
+52:         sqlite.query(insert_user)
+53:         flash("User successfully created!", category="success")
+54:         return redirect(url_for("index"))
+55:     elif register_form.is_submitted() and register_form.submit.data:
+56:         # Form was submitted but validation failed — collect and flash errors
+57:         for field_name, field_errors in register_form.errors.items():
+58:             for error in field_errors:
+59:                 flash(f"{getattr(register_form, field_name).label.text}: {error}", category="warning")
+
+3) Friends page: added followers query and non-mutual filtering (get_followers at line ~195, processing ~204-209)
+from (previous behavior returned only friends):
+    get_friends = f"""
+        SELECT *
+        FROM Friends AS f JOIN Users as u ON f.f_id = u.id
+        WHERE f.u_id = {user["id"]} AND f.f_id != {user["id"]};
+        """
+    friends = sqlite.query(get_friends)
+    return render_template("friends.html.j2", title="Friends", username=username, friends=friends, form=friends_form)
+
+to (added followers and non-mutual filtering):
+195:     get_followers = f"""
+196:         SELECT *
+197:         FROM Friends AS f JOIN Users as u ON f.u_id = u.id
+198:         WHERE f.f_id = {user["id"]};
+199:         """
+200:     followers = sqlite.query(get_followers)
+
+204:     friend_ids = {f['id'] for f in (friends or [])}
+205:     non_mutual_followers = []
+206:     for fol in (followers or []):
+207:         fol = dict(fol)
+208:         mutual = fol.get('id') in friend_ids
+209:         if not mutual:
+210:             non_mutual_followers.append(fol)
+
+211:     return render_template("friends.html.j2", title="Friends", username=username, friends=friends, followers=non_mutual_followers, form=friends_form)
+
+4) Profile route signature and access control (changed to accept viewer and block non-mutual viewers) (new def at line 215)
+from:
+    @app.route("/profile/<string:username>", methods=["GET", "POST"])
+    def profile(username: str):
+        ...
+
+to:
+214: @app.route("/profile/<string:viewer>/<string:username>", methods=["GET", "POST"])
+215: def profile(viewer: str, username: str):
+    # viewer: who is requesting the page, username: whose profile is being viewed
+    # added queries for owner and viewer
+    # added mutual-friend check: if viewer added owner but owner didn't add viewer back -> redirect
+
+5) Profile rendering: changed render_template call to pass viewer as `username` and owner as `user` (line ~262)
+from:
+    return render_template("profile.html.j2", title="Profile", username=username, user=user, form=profile_form)
+
+to:
+262:     return render_template("profile.html.j2", title="Profile", username=viewer, user=owner, form=profile_form)
+
+# End of changes for forms.py and routes.py

@@ -11,7 +11,7 @@
             <div class="card mb-3">
               <div class="card-header">
                 <div class="row align-items-center">
-                  <a class="col-4" href={{ url_for('profile', username=post.username) }}><span class="fa fa-user me-1" aria-hidden="true"></span>{{ post.username }}</a>
+                  <a class="col-4" href={{ url_for('profile', viewer=username, username=post.username) }}><span class="fa fa-user me-1" aria-hidden="true"></span>{{ post.username }}</a>
                   <span class="col-8 text-right">{{ post.creation_time }}</span>
                 </div>
               </div>
@@ -34,7 +34,7 @@
           <div class="card mb-3">
             <div class="card-header">
               <div class="row align-items-center">
-                <a class="col-4" href={{ url_for('profile', username=comment.username) }}><span class="fa fa-user me-1" aria-hidden="true"></span>{{ comment.username }}</a>
+                <a class="col-4" href={{ url_for('profile', viewer=username, username=comment.username) }}><span class="fa fa-user me-1" aria-hidden="true"></span>{{ comment.username }}</a>
                 <span class="col-8 text-right">{{ comment.creation_time }}</span>
               </div>
             </div>
