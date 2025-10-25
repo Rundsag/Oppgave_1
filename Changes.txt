@@ -1,0 +1,328 @@
+//Change on line 27:
+Previous code on line 27
+        get_user = f"""
+            SELECT *
+            FROM Users
+            WHERE username = '{login_form.username.data}';
+            """
+New code on line 27
+        get_user = """
+            SELECT *
+            FROM Users
+            WHERE username = ?;
+            """
+
+//Change on line 32:
+Previous code on line 32
+        user = sqlite.query(get_user, one=True)
+New code on line 32
+        user = sqlite.query(get_user, login_form.username.data, one=True)
+
+//Change on line 42:
+Previous code on line 42
+        insert_user = f"""
+            INSERT INTO Users (username, first_name, last_name, password)
+            VALUES ('{register_form.username.data}', '{register_form.first_name.data}', '{register_form.last_name.data}', '{register_form.password.data}');
+            """
+New code on line 42
+        insert_user = """
+            INSERT INTO Users (username, first_name, last_name, password)
+            VALUES (?, ?, ?, ?);
+            """
+
+//Change on line 46:
+Previous code on line 46
+        sqlite.query(insert_user)
+New code on line 46
+        sqlite.query(insert_user, register_form.username.data, register_form.first_name.data, register_form.last_name.data, register_form.password.data)
+
+//Change on line 62:
+Previous code on line 62
+    get_user = f"""
+        SELECT *
+        FROM Users
+        WHERE username = '{username}';
+        """
+New code on line 62
+    get_user = """
+        SELECT *
+        FROM Users
+        WHERE username = ?;
+        """
+
+//Change on line 67:
+Previous code on line 67
+    user = sqlite.query(get_user, one=True)
+New code on line 67
+    user = sqlite.query(get_user, username, one=True)
+
+//Change on line 74:
+Previous code on line 74
+        insert_post = f"""
+            INSERT INTO Posts (u_id, content, image, creation_time)
+            VALUES ({user["id"]}, '{post_form.content.data}', '{post_form.image.data.filename}', CURRENT_TIMESTAMP);
+            """
+New code on line 74
+        insert_post = """
+            INSERT INTO Posts (u_id, content, image, creation_time)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP);
+            """
+
+//Change on line 78:
+Previous code on line 78
+        sqlite.query(insert_post)
+New code on line 78
+        sqlite.query(insert_post, user["id"], post_form.content.data, post_form.image.data.filename)
+
+//Change on line 81:
+Previous code on line 81
+    get_posts = f"""
+         SELECT p.*, u.*, (SELECT COUNT(*) FROM Comments WHERE p_id = p.id) AS cc
+         FROM Posts AS p JOIN Users AS u ON u.id = p.u_id
+         WHERE p.u_id IN (SELECT u_id FROM Friends WHERE f_id = {user["id"]}) OR p.u_id IN (SELECT f_id FROM Friends WHERE u_id = {user["id"]}) OR p.u_id = {user["id"]}
+         ORDER BY p.creation_time DESC;
+        """
+New code on line 81
+    get_posts = """
+         SELECT p.*, u.*, (SELECT COUNT(*) FROM Comments WHERE p_id = p.id) AS cc
+         FROM Posts AS p JOIN Users AS u ON u.id = p.u_id
+         WHERE p.u_id IN (SELECT u_id FROM Friends WHERE f_id = ?) OR p.u_id IN (SELECT f_id FROM Friends WHERE u_id = ?) OR p.u_id = ?
+         ORDER BY p.creation_time DESC;
+        """
+
+//Change on line 87:
+Previous code on line 87
+    posts = sqlite.query(get_posts)
+New code on line 87
+    posts = sqlite.query(get_posts, user["id"], user["id"], user["id"])
+
+//Change on line 100:
+Previous code on line 100
+    get_user = f"""
+        SELECT *
+        FROM Users
+        WHERE username = '{username}';
+        """
+New code on line 100
+    get_user = """
+        SELECT *
+        FROM Users
+        WHERE username = ?;
+        """
+
+//Change on line 105:
+Previous code on line 105
+    user = sqlite.query(get_user, one=True)
+New code on line 105
+    user = sqlite.query(get_user, username, one=True)
+
+//Change on line 108:
+Previous code on line 108
+        insert_comment = f"""
+            INSERT INTO Comments (p_id, u_id, comment, creation_time)
+            VALUES ({post_id}, {user["id"]}, '{comments_form.comment.data}', CURRENT_TIMESTAMP);
+            """
+New code on line 108
+        insert_comment = """
+            INSERT INTO Comments (p_id, u_id, comment, creation_time)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP);
+            """
+
+//Change on line 112:
+Previous code on line 112
+        sqlite.query(insert_comment)
+New code on line 112
+        sqlite.query(insert_comment, post_id, user["id"], comments_form.comment.data)
+
+//Change on line 114:
+Previous code on line 114
+    get_post = f"""
+        SELECT *
+        FROM Posts AS p JOIN Users AS u ON p.u_id = u.id
+        WHERE p.id = {post_id};
+        """
+New code on line 114
+    get_post = """
+        SELECT *
+        FROM Posts AS p JOIN Users AS u ON p.u_id = u.id
+        WHERE p.id = ?;
+        """
+
+//Change on line 125:
+Previous code on line 125
+    post = sqlite.query(get_post, one=True)
+New code on line 125
+    post = sqlite.query(get_post, post_id, one=True)
+
+//Change on line 119:
+Previous code on line 119
+    get_comments = f"""
+        SELECT DISTINCT *
+        FROM Comments AS c JOIN Users AS u ON c.u_id = u.id
+        WHERE c.p_id={post_id}
+        ORDER BY c.creation_time DESC;
+        """
+New code on line 119
+    get_comments = """
+        SELECT DISTINCT *
+        FROM Comments AS c JOIN Users AS u ON c.u_id = u.id
+        WHERE c.p_id = ?
+        ORDER BY c.creation_time DESC;
+        """
+
+//Change on line 126:
+Previous code on line 126
+    comments = sqlite.query(get_comments)
+New code on line 126
+    comments = sqlite.query(get_comments, post_id)
+
+//Change on line 141:
+Previous code on line 141
+    get_user = f"""
+        SELECT *
+        FROM Users
+        WHERE username = '{username}';
+        """
+New code on line 141
+    get_user = """
+        SELECT *
+        FROM Users
+        WHERE username = ?;
+        """
+
+//Change on line 146:
+Previous code on line 146
+    user = sqlite.query(get_user, one=True)
+New code on line 146
+    user = sqlite.query(get_user, username, one=True)
+
+//Change on line 149:
+Previous code on line 149
+        get_friend = f"""
+            SELECT *
+            FROM Users
+            WHERE username = '{friends_form.username.data}';
+            """
+New code on line 149
+        get_friend = """
+            SELECT *
+            FROM Users
+            WHERE username = ?;
+            """
+
+//Change on line 154:
+Previous code on line 154
+        friend = sqlite.query(get_friend, one=True)
+New code on line 154
+        friend = sqlite.query(get_friend, friends_form.username.data, one=True)
+
+//Change on line 155:
+Previous code on line 155
+        get_friends = f"""
+            SELECT f_id
+            FROM Friends
+            WHERE u_id = {user["id"]};
+            """
+New code on line 155
+        get_friends = """
+            SELECT f_id
+            FROM Friends
+            WHERE u_id = ?;
+            """
+
+//Change on line 160:
+Previous code on line 160
+        friends = sqlite.query(get_friends)
+New code on line 160
+        friends = sqlite.query(get_friends, user["id"])
+
+//Change on line 169:
+Previous code on line 169
+            insert_friend = f"""
+                INSERT INTO Friends (u_id, f_id)
+                VALUES ({user["id"]}, {friend["id"]});
+                """
+New code on line 169
+            insert_friend = """
+                INSERT INTO Friends (u_id, f_id)
+                VALUES (?, ?);
+                """
+                
+//Change on line 173:
+Previous code on line 173
+            sqlite.query(insert_friend)
+New code on line 173
+            sqlite.query(insert_friend, user["id"], friend["id"])
+
+//Change on line 176:
+Previous code on line 176
+    get_friends = f"""
+        SELECT *
+        FROM Friends AS f JOIN Users as u ON f.f_id = u.id
+        WHERE f.u_id = {user["id"]} AND f.f_id != {user["id"]};
+        """
+New code on line 176
+    get_friends = """
+        SELECT *
+        FROM Friends AS f JOIN Users as u ON f.f_id = u.id
+        WHERE f.u_id = ? AND f.f_id != ?;
+        """
+
+//Change on line 181:
+Previous code on line 181
+    friends = sqlite.query(get_friends)
+New code on line 181
+    friends = sqlite.query(get_friends, user["id"], user["id"])
+
+//Change on line 194:
+Previous code on line 194
+    get_user = f"""
+        SELECT *
+        FROM Users
+        WHERE username = '{username}';
+        """
+New code on line 194
+    get_user = """
+        SELECT *
+        FROM Users
+        WHERE username = ?;
+        """
+
+//Change on line 199:
+Previous code on line 199
+    user = sqlite.query(get_user, one=True)
+New code on line 199
+    user = sqlite.query(get_user, username, one=True)
+
+//Change on line 202:
+Previous code on line 202
+        update_profile = f"""
+            UPDATE Users
+            SET education='{profile_form.education.data}', employment='{profile_form.employment.data}',
+                music='{profile_form.music.data}', movie='{profile_form.movie.data}',
+                nationality='{profile_form.nationality.data}', birthday='{profile_form.birthday.data}'
+            WHERE username='{username}';
+            """
+New code on line 202
+        update_profile = """
+            UPDATE Users
+            SET education=?, employment=?,
+                music=?, movie=?,
+                nationality=?, birthday=?
+            WHERE username=?;
+            """
+            
+//Change on line 209:
+Previous code on line 209
+        sqlite.query(update_profile)
+New code on line 209
+        sqlite.query(
+            update_profile,
+            profile_form.education.data,
+            profile_form.employment.data,
+            profile_form.music.data,
+            profile_form.movie.data,
+            profile_form.nationality.data,
+            profile_form.birthday.data,
+            username,
+        )
